@@ -167,11 +167,10 @@ textarea.field{resize:vertical;min-height:100px;line-height:1.7;}
   <div class="nav-section">工作區</div>
   <div class="nav-item active" onclick="switchTab('translate')"><span class="nav-dot"></span>翻譯工作台</div>
   <div class="nav-item" onclick="switchTab('terminology')"><span class="nav-dot"></span>術語表維護</div>
-  <div class="nav-divider"></div>
-  <div class="nav-section">設定</div>
-  <div class="nav-item" onclick="switchTab('settings')"><span class="nav-dot"></span>API 設定</div>
   <div class="sidebar-bottom">
-    <div class="api-status" id="api-status-badge">AI 引擎<br><span id="api-status-text" style="color:var(--muted)">未設定</span></div>
+    <div class="api-status" id="api-status-badge" ondblclick="switchTab('settings')" title="雙擊進入管理員設定" style="cursor:default;">
+      AI 引擎<br><span id="api-status-text" style="color:var(--muted)">未設定</span>
+    </div>
   </div>
 </aside>
 
@@ -181,43 +180,60 @@ textarea.field{resize:vertical;min-height:100px;line-height:1.7;}
   <!-- ═══════ SETTINGS TAB ═══════ -->
   <div id="tab-settings" class="hidden">
     <div class="page-header">
-      <div class="page-title">API 設定</div>
-      <div class="page-sub">選擇 AI 翻譯引擎並設定 API Key，Key 只儲存在本機瀏覽器</div>
+      <div class="page-title">管理員設定</div>
+      <div class="page-sub">此頁面僅限管理員使用</div>
     </div>
 
-    <div class="card">
-      <div class="card-title">選擇 AI 引擎</div>
-      <div class="api-provider-row">
-        <div class="provider-btn on" data-provider="gemini" onclick="selectProvider(this)">Gemini (Google)</div>
-        <div class="provider-btn" data-provider="claude" onclick="selectProvider(this)">Claude (Anthropic)</div>
-        <div class="provider-btn" data-provider="openai" onclick="selectProvider(this)">GPT-4o (OpenAI)</div>
-      </div>
-      <div id="provider-hint" class="hint" style="margin-bottom:14px;"></div>
-
+    <!-- Password gate -->
+    <div id="admin-gate" class="card">
+      <div class="card-title">🔒 管理員驗證</div>
       <div class="input-row">
-        <input type="password" class="field" id="api-key-input" placeholder="貼上 API Key..." />
-        <button class="btn btn-ghost" onclick="testApi()">測試連線</button>
-        <button class="btn btn-accent" onclick="saveApiKey()">儲存</button>
+        <input type="password" class="field" id="admin-pw-input" placeholder="輸入管理員密碼..." onkeydown="if(event.key==='890515')unlockAdmin()" />
+        <button class="btn btn-accent" onclick="unlockAdmin()">驗證</button>
       </div>
-      <div id="api-test-msg"></div>
+      <div id="admin-gate-msg"></div>
     </div>
 
-    <div class="card">
-      <div class="card-title">API Key 取得方式</div>
-      <table style="font-size:13px;width:100%;border-collapse:collapse;">
-        <tr>
-          <td style="padding:10px 0;border-bottom:.5px solid var(--border);color:var(--accent);font-family:var(--mono);width:140px;">Gemini</td>
-          <td style="padding:10px 0 10px 16px;border-bottom:.5px solid var(--border);color:var(--muted);">免費額度最大 · <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--info);text-decoration:none;">aistudio.google.com/app/apikey</a></td>
-        </tr>
-        <tr>
-          <td style="padding:10px 0;border-bottom:.5px solid var(--border);color:var(--accent);font-family:var(--mono);">Claude</td>
-          <td style="padding:10px 0 10px 16px;border-bottom:.5px solid var(--border);color:var(--muted);">翻譯品質佳 · <a href="https://console.anthropic.com" target="_blank" style="color:var(--info);text-decoration:none;">console.anthropic.com</a></td>
-        </tr>
-        <tr>
-          <td style="padding:10px 0;color:var(--accent);font-family:var(--mono);">GPT-4o</td>
-          <td style="padding:10px 0 10px 16px;color:var(--muted);">廣泛支援 · <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--info);text-decoration:none;">platform.openai.com/api-keys</a></td>
-        </tr>
-      </table>
+    <!-- Admin content (hidden until unlocked) -->
+    <div id="admin-content" class="hidden">
+      <div class="card">
+        <div class="card-title">AI 引擎設定</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.7;">
+          目前引擎：<span style="color:var(--accent);font-family:var(--mono)" id="current-provider-display"></span><br>
+          如需更換 API Key 或引擎，請直接編輯 <code style="color:var(--info);font-family:var(--mono)">index.html</code> 原始碼中的 <code style="color:var(--info);font-family:var(--mono)">HARDCODED_API_KEY</code> 和 <code style="color:var(--info);font-family:var(--mono)">HARDCODED_PROVIDER</code> 變數。
+        </p>
+        <div class="api-provider-row">
+          <div class="provider-btn on" data-provider="gemini" onclick="selectProvider(this)">Gemini (Google)</div>
+          <div class="provider-btn" data-provider="claude" onclick="selectProvider(this)">Claude (Anthropic)</div>
+          <div class="provider-btn" data-provider="openai" onclick="selectProvider(this)">GPT-4o (OpenAI)</div>
+        </div>
+        <div id="provider-hint" class="hint" style="margin-bottom:14px;"></div>
+        <div class="input-row">
+          <input type="password" class="field" id="api-key-input" placeholder="貼上新的 API Key..." />
+          <button class="btn btn-ghost" onclick="testApi()">測試連線</button>
+          <button class="btn btn-accent" onclick="saveApiKey()">套用（本次）</button>
+        </div>
+        <p class="hint" style="margin-top:8px;">套用只對本次瀏覽有效。永久生效請修改 HTML 原始碼。</p>
+        <div id="api-test-msg"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">API Key 取得方式</div>
+        <table style="font-size:13px;width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="padding:10px 0;border-bottom:.5px solid var(--border);color:var(--accent);font-family:var(--mono);width:140px;">Gemini</td>
+            <td style="padding:10px 0 10px 16px;border-bottom:.5px solid var(--border);color:var(--muted);">免費額度最大 · <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--info);text-decoration:none;">aistudio.google.com/app/apikey</a></td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;border-bottom:.5px solid var(--border);color:var(--accent);font-family:var(--mono);">Claude</td>
+            <td style="padding:10px 0 10px 16px;border-bottom:.5px solid var(--border);color:var(--muted);">翻譯品質佳 · <a href="https://console.anthropic.com" target="_blank" style="color:var(--info);text-decoration:none;">console.anthropic.com</a></td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;color:var(--accent);font-family:var(--mono);">GPT-4o</td>
+            <td style="padding:10px 0 10px 16px;color:var(--muted);">廣泛支援 · <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--info);text-decoration:none;">platform.openai.com/api-keys</a></td>
+          </tr>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -251,8 +267,8 @@ textarea.field{resize:vertical;min-height:100px;line-height:1.7;}
               <th style="min-width:120px;">JP 日文</th>
               <th style="min-width:120px;">KR 韓文</th>
               <th style="min-width:120px;">TH 泰文</th>
-              <th style="min-width:120px;">ID 印尼文</th>
-              <th style="min-width:120px;">VN 越文</th>
+              <th style="min-width:120px;">ID 印尼</th>
+              <th style="min-width:120px;">VN 越南</th>
               <th style="width:36px;"></th>
             </tr>
           </thead>
@@ -335,6 +351,19 @@ textarea.field{resize:vertical;min-height:100px;line-height:1.7;}
 
 <script>
 // ── LANG CONFIG ───────────────────────────────────────────────────────────────
+// CSV欄位名稱 → 內部 key 對照（容許 CSV 欄順序不同）
+const CSV_HEADER_MAP = {
+  "EN Term":"en","EN term":"en","en":"en",
+  "SG/MY":"SG","SG":"SG",
+  "TW":"TW","TW 繁體":"TW",
+  "CN":"CN","CN 簡體":"CN",
+  "JP":"JP","JP 日文":"JP",
+  "KR":"KR","KR 韓文":"KR","KR ":"KR",
+  "TH":"TH","TH 泰文":"TH","TH ":"TH",
+  "ID":"ID","ID 印尼":"ID","ID ":"ID",
+  "VN":"VN","VN 越南":"VN","VN ":"VN"
+};
+const TERM_LANGS = ["SG","TW","CN","JP","KR","TH","ID","VN"];
 const LANG_CONFIG = {
   SG:{label:"SG/MY (English)",col:"SG/MY",instruction:"English for Singapore/Malaysia. Minor localisation only, keep mostly same as EN."},
   TW:{label:"TW 繁體中文",col:"TW",instruction:"Traditional Chinese (Taiwan). Natural consumer packaging language. Keep brand names and model names in English."},
@@ -357,12 +386,18 @@ const DEFAULT_TERMS = [
 ];
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let currentProvider = "gemini";
-let savedApiKey = localStorage.getItem("pkg_api_key") || "";
-let savedProvider = localStorage.getItem("pkg_provider") || "gemini";
+// ★ 管理員設定區：修改下方三個變數即可
+const HARDCODED_API_KEY      = "在這裡貼上你的API_KEY";   // ← 貼上你的 API Key
+const HARDCODED_PROVIDER     = "gemini";                   // ← gemini / claude / openai
+const ADMIN_PASSWORD         = "garmin2025";               // ← API設定頁的管理員密碼
+
+let currentProvider = HARDCODED_PROVIDER;
+let savedApiKey     = HARDCODED_API_KEY;
+let savedProvider   = HARDCODED_PROVIDER;
 let terms = JSON.parse(localStorage.getItem("pkg_terms") || "null") || DEFAULT_TERMS;
 let entryCount = 0;
 let translationResult = [];
+let adminUnlocked = false;
 
 const PROVIDER_HINTS = {
   gemini:"免費額度最大，每分鐘 15 次請求，建議新手使用",
@@ -378,20 +413,17 @@ const PROVIDER_KEY_PLACEHOLDER = {
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 (function init() {
-  currentProvider = savedProvider;
-  document.querySelectorAll(".provider-btn").forEach(b => {
-    b.classList.toggle("on", b.dataset.provider === currentProvider);
-  });
-  updateProviderHint();
-  if (savedApiKey) {
-    document.getElementById("api-key-input").value = savedApiKey;
-    updateApiStatusBadge(true);
-  }
+  // API key is hardcoded, just update status badge
+  updateApiStatusBadge(!!HARDCODED_API_KEY && HARDCODED_API_KEY !== "在這裡貼上你的API_KEY");
   renderTermTable();
   addEntry();
   addEntry();
   switchTab("translate");
   checkApiWarning();
+  // Fix lang chip toggle - single source of truth
+  document.querySelectorAll(".lang-chip").forEach(c => {
+    c.onclick = () => c.classList.toggle("on");
+  });
 })();
 
 // ── TAB SWITCHING ─────────────────────────────────────────────────────────────
@@ -399,10 +431,16 @@ function switchTab(name) {
   ["translate","terminology","settings"].forEach(t => {
     document.getElementById("tab-"+t).classList.toggle("hidden", t !== name);
   });
-  document.querySelectorAll(".nav-item").forEach((el,i) => {
-    el.classList.toggle("active", i === ["translate","terminology","settings"].indexOf(name));
-  });
+  const navItems = document.querySelectorAll(".nav-item");
+  const navMap = ["translate","terminology"];
+  navItems.forEach((el,i) => el.classList.toggle("active", navMap[i] === name));
   if (name === "terminology") renderTermTable();
+  if (name === "settings" && !adminUnlocked) {
+    document.getElementById("admin-gate").classList.remove("hidden");
+    document.getElementById("admin-content").classList.add("hidden");
+    document.getElementById("admin-pw-input").value = "";
+    clearMsg("admin-gate-msg");
+  }
 }
 
 // ── PROVIDER ─────────────────────────────────────────────────────────────────
@@ -421,15 +459,31 @@ function updateProviderHint() {
   document.getElementById("api-key-input").placeholder = PROVIDER_KEY_PLACEHOLDER[currentProvider];
 }
 
+function unlockAdmin() {
+  const pw = document.getElementById("admin-pw-input").value;
+  if (pw === ADMIN_PASSWORD) {
+    adminUnlocked = true;
+    document.getElementById("admin-gate").classList.add("hidden");
+    document.getElementById("admin-content").classList.remove("hidden");
+    document.getElementById("current-provider-display").textContent = HARDCODED_PROVIDER;
+    currentProvider = savedProvider;
+    document.querySelectorAll(".provider-btn").forEach(b => {
+      b.classList.toggle("on", b.dataset.provider === currentProvider);
+    });
+    updateProviderHint();
+    if (savedApiKey) document.getElementById("api-key-input").value = savedApiKey;
+  } else {
+    showMsg("admin-gate-msg","密碼錯誤","error");
+  }
+}
+
 function saveApiKey() {
   const k = document.getElementById("api-key-input").value.trim();
   if (!k) { showMsg("api-test-msg","請輸入 API Key","error"); return; }
   savedApiKey = k;
   savedProvider = currentProvider;
-  localStorage.setItem("pkg_api_key", k);
-  localStorage.setItem("pkg_provider", currentProvider);
   updateApiStatusBadge(true);
-  showMsg("api-test-msg","✓ 已儲存","success");
+  showMsg("api-test-msg","✓ 已套用（本次瀏覽有效）","success");
   checkApiWarning();
 }
 
@@ -441,7 +495,8 @@ function updateApiStatusBadge(ok) {
 }
 
 function checkApiWarning() {
-  document.getElementById("no-api-warn").classList.toggle("hidden", !!savedApiKey);
+  const keyOk = !!HARDCODED_API_KEY && HARDCODED_API_KEY !== "在這裡貼上你的API_KEY";
+  document.getElementById("no-api-warn").classList.toggle("hidden", keyOk);
 }
 
 async function testApi() {
@@ -686,7 +741,6 @@ function downloadExcel() {
 }
 
 // ── TERMINOLOGY TABLE ─────────────────────────────────────────────────────────
-const TERM_LANGS = ["SG","TW","CN","JP","KR","TH","ID","VN"];
 
 function renderTermTable() {
   const tbody = document.getElementById("term-tbody");
@@ -755,28 +809,59 @@ function importTerms(input) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const text = e.target.result;
-      const lines = text.split(/\r?\n/).filter(l=>l.trim());
+      // Remove BOM if present
+      let text = e.target.result.replace(/^\uFEFF/, "");
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) { showMsg("term-save-msg","CSV 內容不足","error"); return; }
+
+      // Parse header row → map column index to internal key
+      const headerCols = lines[0].split(",").map(h => h.replace(/^"|"$/g,"").trim());
+      const colMap = {}; // index → internal key
+      headerCols.forEach((h, idx) => {
+        const key = CSV_HEADER_MAP[h] || CSV_HEADER_MAP[h.trim()];
+        if (key) colMap[idx] = key;
+      });
+
+      if (!Object.values(colMap).includes("en")) {
+        showMsg("term-save-msg","找不到 EN Term 欄位，請確認 CSV 格式","error"); return;
+      }
+
       const parsed = lines.slice(1).map(line => {
-        const cols = line.split(",").map(c=>c.replace(/^"|"$/g,"").trim());
-        const obj = {en:cols[0]||""};
-        TERM_LANGS.forEach((l,i)=>{ obj[l]=cols[i+1]||""; });
+        // Handle quoted fields with commas inside
+        const cols = [];
+        let cur = "", inQ = false;
+        for (const ch of line) {
+          if (ch === '"') { inQ = !inQ; }
+          else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ""; }
+          else cur += ch;
+        }
+        cols.push(cur.trim());
+
+        const obj = { en: "" };
+        TERM_LANGS.forEach(l => obj[l] = "");
+        Object.entries(colMap).forEach(([idx, key]) => {
+          obj[key] = (cols[idx] || "").replace(/^"|"$/g, "").trim();
+        });
         return obj;
-      }).filter(t=>t.en);
+      }).filter(t => t.en);
+
       if (parsed.length) {
         terms = parsed;
         renderTermTable();
-        showMsg("term-save-msg",`✓ 匯入 ${parsed.length} 筆術語，請記得儲存`,"success");
+        showMsg("term-save-msg", `✓ 成功匯入 ${parsed.length} 筆術語，請按「儲存術語表」`, "success");
+      } else {
+        showMsg("term-save-msg","沒有找到有效資料，請確認 EN Term 欄有內容","error");
       }
-    } catch(e) { showMsg("term-save-msg","匯入失敗："+e.message,"error"); }
+    } catch(err) {
+      showMsg("term-save-msg","匯入失敗：" + err.message, "error");
+    }
   };
   reader.readAsText(file, "utf-8");
-  input.value="";
+  input.value = "";
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function toggleLang(el) { el.classList.toggle("on"); }
-document.querySelectorAll(".lang-chip").forEach(c => c.addEventListener("click",()=>c.classList.toggle("on")));
 
 function showMsg(id, text, type) {
   const el = document.getElementById(id);
