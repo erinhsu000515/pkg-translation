@@ -188,7 +188,7 @@ textarea.field{resize:vertical;min-height:100px;line-height:1.7;}
     <div id="admin-gate" class="card">
       <div class="card-title">🔒 管理員驗證</div>
       <div class="input-row">
-        <input type="password" class="field" id="admin-pw-input" placeholder="輸入管理員密碼..." onkeydown="if(event.key==='890515')unlockAdmin()" />
+        <input type="password" class="field" id="admin-pw-input" placeholder="輸入管理員密碼..." onkeydown="if(event.key==='Enter')unlockAdmin()" />
         <button class="btn btn-accent" onclick="unlockAdmin()">驗證</button>
       </div>
       <div id="admin-gate-msg"></div>
@@ -389,7 +389,7 @@ const DEFAULT_TERMS = [
 // ★ 管理員設定區：修改下方三個變數即可
 const HARDCODED_API_KEY      = "在這裡貼上你的API_KEY";   // ← 貼上你的 API Key
 const HARDCODED_PROVIDER     = "gemini";                   // ← gemini / claude / openai
-const ADMIN_PASSWORD         = "garmin2025";               // ← API設定頁的管理員密碼
+const ADMIN_PASSWORD         = "890515";               // ← API設定頁的管理員密碼
 
 let currentProvider = HARDCODED_PROVIDER;
 let savedApiKey     = HARDCODED_API_KEY;
