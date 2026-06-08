@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PKG Translation Platform</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f0f11; --bg2:#17171b; --bg3:#1e1e24;
+  --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.15);
+  --text:#f0efe8; --muted:#888880;
+  --accent:#c8f050; --accent2:#a0d030;
+  --danger:#ff6b6b; --success:#50e090; --info:#60c0f0;
+  --font:'Sora',sans-serif; --mono:'DM Mono',monospace;
+  --r:10px; --rl:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;}
+.app{display:flex;min-height:100vh;}
+
+/* Sidebar */
+.sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:0.5px solid var(--border);padding:28px 0;position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:100;}
+.logo{padding:0 24px 24px;border-bottom:0.5px solid var(--border);margin-bottom:12px;}
+.logo-mark{font-size:11px;font-weight:500;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;font-family:var(--mono);}
+.logo-name{font-size:15px;font-weight:600;color:var(--text);margin-top:4px;line-height:1.3;}
+.nav-section{padding:8px 24px 4px;font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;font-family:var(--mono);}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 24px;font-size:13px;color:var(--muted);cursor:pointer;transition:all .15s;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.03);}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(200,240,80,.05);}
+.nav-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.nav-divider{height:.5px;background:var(--border);margin:10px 0;}
+.sidebar-bottom{margin-top:auto;padding:16px 24px 0;border-top:.5px solid var(--border);}
+.api-status{font-size:11px;font-family:var(--mono);color:var(--muted);padding:8px 10px;background:var(--bg3);border-radius:6px;line-height:1.6;}
+
+/* Main */
+.main{margin-left:220px;flex:1;padding:40px 48px;max-width:1000px;}
+.page-header{margin-bottom:28px;}
+.page-title{font-size:24px;font-weight:600;letter-spacing:-.02em;}
+.page-sub{font-size:13px;color:var(--muted);margin-top:6px;}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:.5px solid var(--border);margin-bottom:28px;}
+.tab{padding:10px 20px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-0.5px;transition:all .15s;font-family:var(--mono);}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* Cards */
+.card{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--rl);padding:24px;margin-bottom:16px;}
+.card-title{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;font-family:var(--mono);display:flex;align-items:center;gap:8px;}
+
+/* API selector */
+.api-provider-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.provider-btn{padding:7px 16px;border-radius:99px;font-size:12px;font-weight:500;cursor:pointer;border:.5px solid var(--border2);color:var(--muted);background:var(--bg3);transition:all .15s;font-family:var(--mono);}
+.provider-btn:hover{border-color:var(--accent);color:var(--text);}
+.provider-btn.on{background:rgba(200,240,80,.1);border-color:var(--accent);color:var(--accent);}
+
+/* Inputs */
+.input-row{display:flex;gap:8px;}
+.field{flex:1;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:10px 14px;font-size:13px;font-family:var(--mono);color:var(--text);outline:none;transition:border-color .15s;}
+.field:focus{border-color:var(--accent);}
+.field::placeholder{color:var(--muted);}
+textarea.field{resize:vertical;min-height:100px;line-height:1.7;}
+.hint{font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono);}
+.hint a{color:var(--info);text-decoration:none;}
+
+/* Buttons */
+.btn{padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:var(--font);display:inline-flex;align-items:center;gap:6px;}
+.btn-accent{background:var(--accent);color:#0f0f11;}
+.btn-accent:hover{background:var(--accent2);}
+.btn-accent:disabled{opacity:.35;cursor:not-allowed;}
+.btn-ghost{background:transparent;border:.5px solid var(--border2);color:var(--text);}
+.btn-ghost:hover{background:var(--bg3);}
+.btn-ghost:disabled{opacity:.35;cursor:not-allowed;}
+.btn-danger{background:transparent;border:.5px solid rgba(255,107,107,.4);color:var(--danger);}
+.btn-danger:hover{background:rgba(255,107,107,.08);}
+.btn-sm{padding:5px 12px;font-size:12px;}
+
+/* Product entries */
+.entries-list{display:flex;flex-direction:column;gap:12px;}
+.entry-card{background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:16px;position:relative;}
+.entry-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.entry-num{font-size:11px;font-family:var(--mono);color:var(--accent);background:rgba(200,240,80,.1);padding:3px 9px;border-radius:99px;}
+.entry-name{flex:1;}
+.entry-name input{background:none;border:none;outline:none;font-size:13px;font-weight:500;color:var(--text);font-family:var(--font);width:100%;}
+.entry-name input::placeholder{color:var(--muted);}
+.entry-body textarea{width:100%;background:var(--bg2);border:.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;font-family:var(--mono);color:var(--text);outline:none;resize:vertical;min-height:80px;line-height:1.7;transition:border-color .15s;}
+.entry-body textarea:focus{border-color:var(--accent);}
+.entry-body textarea::placeholder{color:var(--muted);}
+.remove-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px;transition:color .15s;flex-shrink:0;}
+.remove-btn:hover{color:var(--danger);}
+.add-entry-btn{display:flex;align-items:center;gap:8px;padding:12px 16px;background:var(--bg3);border:.5px dashed var(--border2);border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--muted);transition:all .15s;width:100%;justify-content:center;}
+.add-entry-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* Language chips */
+.lang-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.lang-chip{padding:7px 14px;border-radius:99px;font-size:12px;font-weight:500;cursor:pointer;border:.5px solid var(--border2);color:var(--muted);background:var(--bg3);transition:all .15s;font-family:var(--mono);}
+.lang-chip:hover{border-color:var(--accent);color:var(--text);}
+.lang-chip.on{background:rgba(200,240,80,.1);border-color:var(--accent);color:var(--accent);}
+
+/* Progress */
+.progress-wrap{margin:16px 0;}
+.progress-track{background:var(--bg3);border-radius:99px;height:3px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .4s ease;}
+.progress-label{font-size:12px;color:var(--muted);margin-top:8px;font-family:var(--mono);}
+
+/* Result table */
+.result-wrap{overflow-x:auto;margin-top:8px;}
+.result-table{width:100%;border-collapse:collapse;font-size:12px;}
+.result-table th{background:var(--bg3);padding:10px 14px;text-align:left;font-size:11px;font-family:var(--mono);font-weight:500;color:var(--muted);border-bottom:.5px solid var(--border);white-space:nowrap;letter-spacing:.06em;position:sticky;top:0;}
+.result-table th.hl{color:var(--accent);}
+.result-table td{padding:10px 14px;border-bottom:.5px solid var(--border);vertical-align:top;line-height:1.6;font-size:12px;}
+.result-table tr:last-child td{border-bottom:none;}
+.result-table tr:hover td{background:rgba(255,255,255,.02);}
+.col-product{color:var(--accent);font-family:var(--mono);font-size:11px;white-space:nowrap;}
+.col-en{color:var(--muted);font-family:var(--mono);font-size:11px;}
+.editable-cell{min-width:120px;outline:none;padding:2px 4px;border-radius:4px;}
+.editable-cell:focus{background:rgba(200,240,80,.05);outline:1px solid var(--accent);}
+
+/* Terminology tab */
+.term-toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.term-table{width:100%;border-collapse:collapse;font-size:12px;}
+.term-table th{padding:9px 12px;text-align:left;font-size:11px;font-family:var(--mono);font-weight:500;color:var(--muted);border-bottom:.5px solid var(--border);white-space:nowrap;}
+.term-table td{padding:6px 8px;border-bottom:.5px solid var(--border);vertical-align:top;}
+.term-table tr:last-child td{border-bottom:none;}
+.term-input{background:none;border:none;outline:none;font-size:12px;font-family:var(--mono);color:var(--text);width:100%;padding:3px 6px;border-radius:4px;transition:background .15s;}
+.term-input:focus{background:rgba(200,240,80,.05);outline:1px solid var(--accent);}
+.term-input::placeholder{color:var(--muted);}
+.term-row-del{background:none;border:none;color:var(--muted);cursor:pointer;padding:3px 6px;border-radius:4px;transition:color .15s;font-size:14px;}
+.term-row-del:hover{color:var(--danger);}
+
+/* Badges */
+.badge{display:inline-block;font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:4px;font-weight:500;}
+.badge-success{background:rgba(80,224,144,.12);color:var(--success);}
+.badge-info{background:rgba(96,192,240,.12);color:var(--info);}
+.badge-warn{background:rgba(255,200,80,.12);color:#ffc850;}
+
+/* Messages */
+.msg{font-size:12px;padding:10px 14px;border-radius:var(--r);margin-top:10px;font-family:var(--mono);}
+.msg-error{background:rgba(255,107,107,.12);color:var(--danger);border:.5px solid rgba(255,107,107,.3);}
+.msg-success{background:rgba(80,224,144,.1);color:var(--success);border:.5px solid rgba(80,224,144,.25);}
+.msg-info{background:rgba(96,192,240,.1);color:var(--info);border:.5px solid rgba(96,192,240,.25);}
+
+.action-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.spacer{flex:1;}
+.hidden{display:none;}
+.sep{height:.5px;background:var(--border);margin:20px 0;}
+
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+@media(max-width:700px){.sidebar{display:none;}.main{margin-left:0;padding:20px 16px;}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">PKG Tool</div>
+    <div class="logo-name">Translation<br>Platform</div>
+  </div>
+  <div class="nav-section">工作區</div>
+  <div class="nav-item active" onclick="switchTab('translate')"><span class="nav-dot"></span>翻譯工作台</div>
+  <div class="nav-item" onclick="switchTab('terminology')"><span class="nav-dot"></span>術語表維護</div>
+  <div class="nav-divider"></div>
+  <div class="nav-section">設定</div>
+  <div class="nav-item" onclick="switchTab('settings')"><span class="nav-dot"></span>API 設定</div>
+  <div class="sidebar-bottom">
+    <div class="api-status" id="api-status-badge">AI 引擎<br><span id="api-status-text" style="color:var(--muted)">未設定</span></div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- ═══════ SETTINGS TAB ═══════ -->
+  <div id="tab-settings" class="hidden">
+    <div class="page-header">
+      <div class="page-title">API 設定</div>
+      <div class="page-sub">選擇 AI 翻譯引擎並設定 API Key，Key 只儲存在本機瀏覽器</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">選擇 AI 引擎</div>
+      <div class="api-provider-row">
+        <div class="provider-btn on" data-provider="gemini" onclick="selectProvider(this)">Gemini (Google)</div>
+        <div class="provider-btn" data-provider="claude" onclick="selectProvider(this)">Claude (Anthropic)</div>
+        <div class="provider-btn" data-provider="openai" onclick="selectProvider(this)">GPT-4o (OpenAI)</div>
+      </div>
+      <div id="provider-hint" class="hint" style="margin-bottom:14px;"></div>
+
+      <div class="input-row">
+        <input type="password" class="field" id="api-key-input" placeholder="貼上 API Key..." />
+        <button class="btn btn-ghost" onclick="testApi()">測試連線</button>
+        <button class="btn btn-accent" onclick="saveApiKey()">儲存</button>
+      </div>
+      <div id="api-test-msg"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">API Key 取得方式</div>
+      <table style="font-size:13px;width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:10px 0;border-bottom:.5px solid var(--border);color:var(--accent);font-family:var(--mono);width:140px;">Gemini</td>
+          <td style="padding:10px 0 10px 16px;border-bottom:.5px solid var(--border);color:var(--muted);">免費額度最大 · <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--info);text-decoration:none;">aistudio.google.com/app/apikey</a></td>
+        </tr>
+        <tr>
+          <td style="padding:10px 0;border-bottom:.5px solid var(--border);color:var(--accent);font-family:var(--mono);">Claude</td>
+          <td style="padding:10px 0 10px 16px;border-bottom:.5px solid var(--border);color:var(--muted);">翻譯品質佳 · <a href="https://console.anthropic.com" target="_blank" style="color:var(--info);text-decoration:none;">console.anthropic.com</a></td>
+        </tr>
+        <tr>
+          <td style="padding:10px 0;color:var(--accent);font-family:var(--mono);">GPT-4o</td>
+          <td style="padding:10px 0 10px 16px;color:var(--muted);">廣泛支援 · <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--info);text-decoration:none;">platform.openai.com/api-keys</a></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════ TERMINOLOGY TAB ═══════ -->
+  <div id="tab-terminology" class="hidden">
+    <div class="page-header">
+      <div class="page-title">術語表維護</div>
+      <div class="page-sub">固定對照詞彙，翻譯時 AI 會強制套用這些術語，不自行翻譯</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        術語對照表
+        <span class="badge badge-info" id="term-count-badge">0 筆</span>
+      </div>
+      <div class="term-toolbar">
+        <button class="btn btn-accent btn-sm" onclick="addTermRow()">＋ 新增術語</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportTerms()">⬇ 匯出 CSV</button>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer;">⬆ 匯入 CSV <input type="file" accept=".csv" style="display:none" onchange="importTerms(this)"></label>
+        <div class="spacer"></div>
+        <button class="btn btn-ghost btn-sm" onclick="saveTerms()">💾 儲存術語表</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="term-table" id="term-table">
+          <thead>
+            <tr>
+              <th style="min-width:160px;">EN Term</th>
+              <th style="min-width:120px;">SG/MY</th>
+              <th style="min-width:120px;">TW 繁體</th>
+              <th style="min-width:120px;">CN 簡體</th>
+              <th style="min-width:120px;">JP 日文</th>
+              <th style="min-width:120px;">KR 韓文</th>
+              <th style="min-width:120px;">TH 泰文</th>
+              <th style="min-width:120px;">ID 印尼</th>
+              <th style="min-width:120px;">VN 越南</th>
+              <th style="width:36px;"></th>
+            </tr>
+          </thead>
+          <tbody id="term-tbody"></tbody>
+        </table>
+      </div>
+      <div id="term-save-msg"></div>
+    </div>
+  </div>
+
+  <!-- ═══════ TRANSLATE TAB ═══════ -->
+  <div id="tab-translate">
+    <div class="page-header">
+      <div class="page-title">翻譯工作台</div>
+      <div class="page-sub">輸入各彩盒產品英文文案，AI 翻譯後匯出 Excel 供各國核對</div>
+    </div>
+
+    <!-- API quick check -->
+    <div id="no-api-warn" class="msg msg-warn hidden" style="margin-bottom:16px;">
+      ⚠ 尚未設定 API Key，請先至「API 設定」頁面設定。<button class="btn btn-ghost btn-sm" style="margin-left:12px;" onclick="switchTab('settings')">前往設定</button>
+    </div>
+
+    <!-- Product entries -->
+    <div class="card">
+      <div class="card-title">彩盒產品列表</div>
+      <div class="entries-list" id="entries-list"></div>
+      <div style="margin-top:12px;">
+        <button class="add-entry-btn" onclick="addEntry()">＋ 新增一個彩盒</button>
+      </div>
+    </div>
+
+    <!-- Language -->
+    <div class="card">
+      <div class="card-title">翻譯語言</div>
+      <div class="lang-grid">
+        <div class="lang-chip on" data-lang="SG">SG/MY EN</div>
+        <div class="lang-chip on" data-lang="TW">TW 繁體中文</div>
+        <div class="lang-chip on" data-lang="CN">CN 簡體中文</div>
+        <div class="lang-chip on" data-lang="JP">JP 日本語</div>
+        <div class="lang-chip on" data-lang="KR">KR 한국어</div>
+        <div class="lang-chip on" data-lang="TH">TH ภาษาไทย</div>
+        <div class="lang-chip" data-lang="ID">ID Bahasa</div>
+        <div class="lang-chip" data-lang="VN">VN Tiếng Việt</div>
+      </div>
+    </div>
+
+    <!-- Action -->
+    <div class="action-row" style="margin-bottom:20px;">
+      <button class="btn btn-accent" id="btn-translate" onclick="startTranslation()" style="padding:12px 28px;font-size:14px;">▶ 開始 AI 翻譯</button>
+      <div id="translate-msg"></div>
+    </div>
+
+    <!-- Progress -->
+    <div id="progress-section" class="hidden">
+      <div class="progress-wrap">
+        <div class="progress-track"><div class="progress-fill" id="progress-bar" style="width:0%"></div></div>
+        <div class="progress-label" id="progress-label">準備中...</div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="card hidden" id="section-result">
+      <div class="card-title">翻譯結果 <span class="badge badge-success" id="result-count-badge"></span></div>
+      <div class="hint" style="margin-bottom:10px;">各欄位可直接點擊編輯，修改後下載的 Excel 會包含最新內容</div>
+      <div class="result-wrap">
+        <table class="result-table">
+          <thead id="result-thead"></thead>
+          <tbody id="result-tbody"></tbody>
+        </table>
+      </div>
+      <div class="action-row" style="margin-top:20px;">
+        <button class="btn btn-accent" onclick="downloadExcel()">⬇ 下載 Excel</button>
+        <button class="btn btn-ghost" onclick="resetTranslation()">↺ 清除結果</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// ── LANG CONFIG ───────────────────────────────────────────────────────────────
+const LANG_CONFIG = {
+  SG:{label:"SG/MY (English)",col:"SG/MY",instruction:"English for Singapore/Malaysia. Minor localisation only, keep mostly same as EN."},
+  TW:{label:"TW 繁體中文",col:"TW",instruction:"Traditional Chinese (Taiwan). Natural consumer packaging language. Keep brand names and model names in English."},
+  CN:{label:"CN 簡體中文",col:"CN",instruction:"Simplified Chinese (mainland China). Natural consumer packaging language. Keep brand names and model names in English."},
+  JP:{label:"JP 日本語",col:"JP",instruction:"Japanese. Natural product packaging language. Keep brand names and model names in English/Katakana as appropriate."},
+  KR:{label:"KR 한국어",col:"KR",instruction:"Korean. Natural product packaging language. Keep brand names and model names in English."},
+  TH:{label:"TH ภาษาไทย",col:"TH",instruction:"Thai. Natural product packaging language. Keep brand names and model names in English."},
+  ID:{label:"ID Bahasa Indonesia",col:"ID",instruction:"Bahasa Indonesia. Natural consumer packaging language. Keep brand names and model names in English."},
+  VN:{label:"VN Tiếng Việt",col:"VN",instruction:"Vietnamese. Natural consumer packaging language. Keep brand names and model names in English."}
+};
+
+const NO_TRANSLATE = ["Garmin","fēnix","Enduro","ComfortFit","Solar","GPS","AMOLED","Bluetooth","Wi-Fi","ANT+","Connect IQ","Body Battery","PulseOx","VO2 Max","inReach","TOPO","LiveTrack","GroupTrack"];
+
+// ── DEFAULT TERMINOLOGY ───────────────────────────────────────────────────────
+const DEFAULT_TERMS = [
+  {en:"PACKAGE CONTAINS:",SG:"PACKAGE CONTAINS:",TW:"標準配備:",CN:"",JP:"標準付属品:",KR:"패키지 구성품:",TH:"อุปกรณ์ในกล่องประกอบด้วย:",ID:"ISI PAKET:",VN:"BỘ SẢN PHẨM BAO GỒM:"},
+  {en:"charging/data cable",SG:"charging/data cable",TW:"傳輸充電線",CN:"",JP:"チャージングケーブル",KR:"충전/데이터 케이블",TH:"สายชาร์จ/รับส่งข้อมูล",ID:"kabel pengisi daya/kabel data",VN:"cáp sạc/truyền dữ liệu"},
+  {en:"documentation",SG:"documentation",TW:"中文操作手冊",CN:"",JP:"製品保証書",KR:"사용 설명서",TH:"คู่มือการใช้งาน",ID:"panduan",VN:"sổ tay hướng dẫn sử dụng"},
+  {en:"All pictures shown are for illustration purpose only. Actual product may vary due to product enhancement.",SG:"All pictures shown are for illustration purposes only. Actual product may vary due to product enhancement.",TW:"所有圖片僅供參考，產品請以實物為準。",CN:"",JP:"画像はイメージであり、実際の商品とは異なる場合があります。",KR:"제시된 사진은 소비자의 이해를 돕기 위해 제작된 이미지로 실제와 다를 수 있습니다.",TH:"ภาพทั้งหมดที่แสดงเป็นเพียงตัวอย่างที่มีวัตถุประสงค์เพื่อการแสดงภาพประกอบคำอธิบายเท่านั้น ผลิตภัณฑ์จริงอาจแตกต่างกันเนื่องจากการเพิ่มประสิทธิภาพผลิตภัณฑ์",ID:"Gambar hanya sebagai ilustrasi saja. Produk yang sebenarnya dapat bervariasi tergantung peningkatan produk.",VN:"Tất cả các hình ảnh hiển thị chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác hình ảnh minh họa do sự cải tiến sản phẩm."}
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentProvider = "gemini";
+let savedApiKey = localStorage.getItem("pkg_api_key") || "";
+let savedProvider = localStorage.getItem("pkg_provider") || "gemini";
+let terms = JSON.parse(localStorage.getItem("pkg_terms") || "null") || DEFAULT_TERMS;
+let entryCount = 0;
+let translationResult = [];
+
+const PROVIDER_HINTS = {
+  gemini:"免費額度最大，每分鐘 15 次請求，建議新手使用",
+  claude:"翻譯品質佳，支援長文本，每次費用約 $0.01–0.03 USD",
+  openai:"廣泛支援，GPT-4o 翻譯品質優秀，按用量付費"
+};
+
+const PROVIDER_KEY_PLACEHOLDER = {
+  gemini:"AIza...",
+  claude:"sk-ant-api03-...",
+  openai:"sk-..."
+};
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+(function init() {
+  currentProvider = savedProvider;
+  document.querySelectorAll(".provider-btn").forEach(b => {
+    b.classList.toggle("on", b.dataset.provider === currentProvider);
+  });
+  updateProviderHint();
+  if (savedApiKey) {
+    document.getElementById("api-key-input").value = savedApiKey;
+    updateApiStatusBadge(true);
+  }
+  renderTermTable();
+  addEntry();
+  addEntry();
+  switchTab("translate");
+  checkApiWarning();
+})();
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────────
+function switchTab(name) {
+  ["translate","terminology","settings"].forEach(t => {
+    document.getElementById("tab-"+t).classList.toggle("hidden", t !== name);
+  });
+  document.querySelectorAll(".nav-item").forEach((el,i) => {
+    el.classList.toggle("active", i === ["translate","terminology","settings"].indexOf(name));
+  });
+  if (name === "terminology") renderTermTable();
+}
+
+// ── PROVIDER ─────────────────────────────────────────────────────────────────
+function selectProvider(el) {
+  currentProvider = el.dataset.provider;
+  document.querySelectorAll(".provider-btn").forEach(b => b.classList.toggle("on", b === el));
+  updateProviderHint();
+  document.getElementById("api-key-input").placeholder = PROVIDER_KEY_PLACEHOLDER[currentProvider];
+  document.getElementById("api-key-input").value = "";
+  savedApiKey = "";
+  updateApiStatusBadge(false);
+}
+
+function updateProviderHint() {
+  document.getElementById("provider-hint").textContent = PROVIDER_HINTS[currentProvider] || "";
+  document.getElementById("api-key-input").placeholder = PROVIDER_KEY_PLACEHOLDER[currentProvider];
+}
+
+function saveApiKey() {
+  const k = document.getElementById("api-key-input").value.trim();
+  if (!k) { showMsg("api-test-msg","請輸入 API Key","error"); return; }
+  savedApiKey = k;
+  savedProvider = currentProvider;
+  localStorage.setItem("pkg_api_key", k);
+  localStorage.setItem("pkg_provider", currentProvider);
+  updateApiStatusBadge(true);
+  showMsg("api-test-msg","✓ 已儲存","success");
+  checkApiWarning();
+}
+
+function updateApiStatusBadge(ok) {
+  const providerName = {gemini:"Gemini",claude:"Claude",openai:"GPT-4o"}[savedProvider] || savedProvider;
+  document.getElementById("api-status-text").innerHTML = ok
+    ? `<span style="color:var(--accent)">${providerName} ✓</span>`
+    : `<span style="color:var(--muted)">未設定</span>`;
+}
+
+function checkApiWarning() {
+  document.getElementById("no-api-warn").classList.toggle("hidden", !!savedApiKey);
+}
+
+async function testApi() {
+  const k = document.getElementById("api-key-input").value.trim();
+  if (!k) { showMsg("api-test-msg","請輸入 API Key","error"); return; }
+  showMsg("api-test-msg","測試中...","info");
+  try {
+    const r = await callAI(k, currentProvider, "Reply with exactly: OK");
+    if (r.includes("OK")) {
+      showMsg("api-test-msg","✓ 連線成功！","success");
+    } else {
+      showMsg("api-test-msg","回應異常："+r.substring(0,80),"error");
+    }
+  } catch(e) {
+    showMsg("api-test-msg","錯誤："+e.message,"error");
+  }
+}
+
+// ── AI CALL (multi-provider) ──────────────────────────────────────────────────
+async function callAI(key, provider, prompt) {
+  if (provider === "gemini") {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+    const res = await fetch(url, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.2,maxOutputTokens:8192}})
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message||"Gemini API error "+res.status); }
+    const d = await res.json();
+    return d.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  }
+  if (provider === "claude") {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body: JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4096,messages:[{role:"user",content:prompt}]})
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message||"Claude API error "+res.status); }
+    const d = await res.json();
+    return d.content?.map(c=>c.text||"").join("") || "";
+  }
+  if (provider === "openai") {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+      body: JSON.stringify({model:"gpt-4o",max_tokens:4096,temperature:0.2,messages:[{role:"user",content:prompt}]})
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message||"OpenAI API error "+res.status); }
+    const d = await res.json();
+    return d.choices?.[0]?.message?.content || "";
+  }
+  throw new Error("未知的 AI 引擎");
+}
+
+function parseJSON(raw) {
+  const clean = raw.replace(/```json|```/g,"").trim();
+  const s = clean.indexOf("["), e = clean.lastIndexOf("]");
+  if (s === -1 || e === -1) throw new Error("回應不是有效的 JSON 陣列");
+  return JSON.parse(clean.substring(s, e+1));
+}
+
+// ── ENTRIES ───────────────────────────────────────────────────────────────────
+function addEntry() {
+  entryCount++;
+  const id = entryCount;
+  const list = document.getElementById("entries-list");
+  const div = document.createElement("div");
+  div.className = "entry-card";
+  div.dataset.id = id;
+  div.innerHTML = `
+    <div class="entry-header">
+      <span class="entry-num">#${id}</span>
+      <div class="entry-name"><input type="text" placeholder="產品名稱（例：FENIX 9 Pro 51mm）" /></div>
+      <button class="remove-btn" onclick="removeEntry(${id})" title="刪除">✕</button>
+    </div>
+    <div class="entry-body">
+      <textarea placeholder="貼上彩盒英文文案，例如：&#10;PACKAGE CONTAINS: fēnix 9 Pro smartwatch – 51mm, charging/data cable and documentation. All pictures shown are for illustration purpose only. Actual product may vary due to product enhancement."></textarea>
+    </div>`;
+  list.appendChild(div);
+}
+
+function removeEntry(id) {
+  const el = document.querySelector(`.entry-card[data-id="${id}"]`);
+  if (el) el.remove();
+  if (document.querySelectorAll(".entry-card").length === 0) addEntry();
+}
+
+function getEntries() {
+  return [...document.querySelectorAll(".entry-card")].map(card => ({
+    product: card.querySelector(".entry-name input").value.trim(),
+    text: card.querySelector("textarea").value.trim()
+  })).filter(e => e.text);
+}
+
+// ── TRANSLATION ───────────────────────────────────────────────────────────────
+async function startTranslation() {
+  if (!savedApiKey) { showMsg("translate-msg","請先至「API 設定」設定 API Key","error"); return; }
+  const entries = getEntries();
+  if (!entries.length) { showMsg("translate-msg","請至少輸入一個彩盒文案","error"); return; }
+  const langs = getSelectedLangs();
+  if (!langs.length) { showMsg("translate-msg","請選擇至少一種翻譯語言","error"); return; }
+
+  clearMsg("translate-msg");
+  document.getElementById("btn-translate").disabled = true;
+  document.getElementById("section-result").classList.add("hidden");
+  document.getElementById("progress-section").classList.remove("hidden");
+
+  translationResult = [];
+
+  // Build terminology string
+  const termStr = terms.map(t => {
+    const langParts = langs.map(l => `${l}:"${t[l]||t.en}"`).join(", ");
+    return `"${t.en}" → {${langParts}}`;
+  }).join("\n");
+
+  const langInstr = langs.map(l => `- ${l}: ${LANG_CONFIG[l].instruction}`).join("\n");
+  const langKeys = langs.map(l => `"${l}":"..."`).join(", ");
+
+  for (let i = 0; i < entries.length; i++) {
+    const e = entries[i];
+    const pct = Math.round(((i) / entries.length) * 90) + 5;
+    showProgress(pct, `翻譯 ${i+1}/${entries.length}：${e.product || "產品 "+(i+1)}...`);
+
+    const prompt = `You are a professional product packaging translator for Garmin.
+
+MANDATORY TERMINOLOGY (use these exact translations):
+${termStr}
+
+NEVER TRANSLATE (keep in English exactly): ${NO_TRANSLATE.join(", ")}
+
+TARGET LANGUAGES:
+${langInstr}
+
+Translate this packaging text:
+PRODUCT: ${e.product || "Product "+(i+1)}
+TEXT: ${e.text}
+
+Return ONLY a single JSON object:
+{"product":"${e.product || "Product "+(i+1)}","en":"${e.text.replace(/"/g,"'")}",${langKeys}}
+
+Return ONLY valid JSON object, no markdown, no explanation.`;
+
+    try {
+      const raw = await callAI(savedApiKey, savedProvider, prompt);
+      const clean = raw.replace(/```json|```/g,"").trim();
+      const s = clean.indexOf("{"), end = clean.lastIndexOf("}");
+      const obj = JSON.parse(clean.substring(s, end+1));
+      obj.en = e.text;
+      obj.product = e.product || ("Product "+(i+1));
+      translationResult.push(obj);
+    } catch(err) {
+      translationResult.push({product: e.product||("Product "+(i+1)), en:e.text, _error:"翻譯失敗："+err.message});
+    }
+  }
+
+  showProgress(100, "完成！");
+  setTimeout(() => document.getElementById("progress-section").classList.add("hidden"), 700);
+
+  renderResult(langs);
+  document.getElementById("btn-translate").disabled = false;
+}
+
+function getSelectedLangs() {
+  return [...document.querySelectorAll(".lang-chip.on")].map(e => e.dataset.lang);
+}
+
+function showProgress(pct, label) {
+  document.getElementById("progress-bar").style.width = pct + "%";
+  document.getElementById("progress-label").textContent = label;
+}
+
+// ── RESULT ────────────────────────────────────────────────────────────────────
+function renderResult(langs) {
+  const section = document.getElementById("section-result");
+  section.classList.remove("hidden");
+  section.scrollIntoView({behavior:"smooth",block:"start"});
+
+  document.getElementById("result-count-badge").textContent = translationResult.length + " 筆";
+
+  const thead = document.getElementById("result-thead");
+  const tbody = document.getElementById("result-tbody");
+
+  thead.innerHTML = `<tr>
+    <th>Product</th>
+    <th>EN</th>
+    ${langs.map(l=>`<th class="hl">${l}</th>`).join("")}
+  </tr>`;
+
+  tbody.innerHTML = translationResult.map((row,ri) => `<tr>
+    <td class="col-product">${row.product||""}</td>
+    <td class="col-en">${row.en||""}</td>
+    ${langs.map(l => `<td contenteditable="true" class="editable-cell" data-row="${ri}" data-lang="${l}">${row[l]||row._error||""}</td>`).join("")}
+  </tr>`).join("");
+
+  // Sync edits back to data
+  tbody.querySelectorAll("[contenteditable]").forEach(cell => {
+    cell.addEventListener("input", () => {
+      const ri = parseInt(cell.dataset.row), lang = cell.dataset.lang;
+      translationResult[ri][lang] = cell.innerText;
+    });
+  });
+}
+
+function resetTranslation() {
+  translationResult = [];
+  document.getElementById("section-result").classList.add("hidden");
+  clearMsg("translate-msg");
+}
+
+// ── EXCEL EXPORT ──────────────────────────────────────────────────────────────
+function downloadExcel() {
+  const langs = getSelectedLangs();
+  const headers = ["Product", "EN", ...langs.map(l => LANG_CONFIG[l].col)];
+  const rows = translationResult.map(row => [
+    row.product||"", row.en||"", ...langs.map(l => row[l]||"")
+  ]);
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  ws["!cols"] = [{wch:24},{wch:50},...langs.map(()=>({wch:40}))];
+
+  // Wrap text for all cells
+  const range = XLSX.utils.decode_range(ws["!ref"]);
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const addr = XLSX.utils.encode_cell({r:R,c:C});
+      if (!ws[addr]) continue;
+      if (!ws[addr].s) ws[addr].s = {};
+      ws[addr].s.alignment = {wrapText:true,vertical:"top"};
+    }
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Translations");
+
+  // Terminology sheet
+  const tHeaders = ["EN Term", ...langs.map(l => LANG_CONFIG[l].col)];
+  const tRows = terms.map(t => [t.en, ...langs.map(l => t[l]||"")]);
+  const ws2 = XLSX.utils.aoa_to_sheet([tHeaders, ...tRows]);
+  ws2["!cols"] = [{wch:50},...langs.map(()=>({wch:40}))];
+  XLSX.utils.book_append_sheet(wb, ws2, "Terminology");
+
+  XLSX.writeFile(wb, `PKG_Translation_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// ── TERMINOLOGY TABLE ─────────────────────────────────────────────────────────
+const TERM_LANGS = ["SG","TW","CN","JP","KR","TH","ID","VN"];
+
+function renderTermTable() {
+  const tbody = document.getElementById("term-tbody");
+  tbody.innerHTML = "";
+  terms.forEach((t,i) => tbody.appendChild(buildTermRow(t,i)));
+  document.getElementById("term-count-badge").textContent = terms.length + " 筆";
+}
+
+function buildTermRow(t, i) {
+  const tr = document.createElement("tr");
+  tr.dataset.idx = i;
+  tr.innerHTML = `
+    <td><input class="term-input" value="${esc(t.en)}" placeholder="EN term" onchange="updateTerm(${i},'en',this.value)" /></td>
+    ${TERM_LANGS.map(l=>`<td><input class="term-input" value="${esc(t[l]||"")}" placeholder="${l}" onchange="updateTerm(${i},'${l}',this.value)" /></td>`).join("")}
+    <td><button class="term-row-del" onclick="deleteTerm(${i})" title="刪除">✕</button></td>`;
+  return tr;
+}
+
+function esc(s) { return (s||"").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+
+function updateTerm(i, field, val) {
+  if (!terms[i]) return;
+  terms[i][field] = val;
+}
+
+function addTermRow() {
+  const blank = {en:""};
+  TERM_LANGS.forEach(l => blank[l]="");
+  terms.push(blank);
+  const tbody = document.getElementById("term-tbody");
+  tbody.appendChild(buildTermRow(blank, terms.length-1));
+  document.getElementById("term-count-badge").textContent = terms.length + " 筆";
+}
+
+function deleteTerm(i) {
+  terms.splice(i,1);
+  renderTermTable();
+}
+
+function saveTerms() {
+  // Collect current input values before saving
+  document.querySelectorAll("#term-tbody tr").forEach((tr,i) => {
+    if (!terms[i]) return;
+    const inputs = tr.querySelectorAll(".term-input");
+    const fields = ["en",...TERM_LANGS];
+    inputs.forEach((inp,j) => { if(fields[j]) terms[i][fields[j]] = inp.value; });
+  });
+  localStorage.setItem("pkg_terms", JSON.stringify(terms));
+  showMsg("term-save-msg","✓ 術語表已儲存至本機","success");
+  setTimeout(() => clearMsg("term-save-msg"), 2500);
+}
+
+function exportTerms() {
+  const headers = ["EN Term",...TERM_LANGS];
+  const rows = terms.map(t => [t.en,...TERM_LANGS.map(l=>t[l]||"")]);
+  const ws = XLSX.utils.aoa_to_sheet([headers,...rows]);
+  ws["!cols"] = [{wch:50},...TERM_LANGS.map(()=>({wch:30}))];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Terminology");
+  XLSX.writeFile(wb,"PKG_Terminology.xlsx");
+}
+
+function importTerms(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const text = e.target.result;
+      const lines = text.split(/\r?\n/).filter(l=>l.trim());
+      const parsed = lines.slice(1).map(line => {
+        const cols = line.split(",").map(c=>c.replace(/^"|"$/g,"").trim());
+        const obj = {en:cols[0]||""};
+        TERM_LANGS.forEach((l,i)=>{ obj[l]=cols[i+1]||""; });
+        return obj;
+      }).filter(t=>t.en);
+      if (parsed.length) {
+        terms = parsed;
+        renderTermTable();
+        showMsg("term-save-msg",`✓ 匯入 ${parsed.length} 筆術語，請記得儲存`,"success");
+      }
+    } catch(e) { showMsg("term-save-msg","匯入失敗："+e.message,"error"); }
+  };
+  reader.readAsText(file, "utf-8");
+  input.value="";
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function toggleLang(el) { el.classList.toggle("on"); }
+document.querySelectorAll(".lang-chip").forEach(c => c.addEventListener("click",()=>c.classList.toggle("on")));
+
+function showMsg(id, text, type) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = `<div class="msg msg-${type}">${text}</div>`;
+}
+function clearMsg(id) { const el = document.getElementById(id); if(el) el.innerHTML=""; }
+</script>
+</body>
+</html>
